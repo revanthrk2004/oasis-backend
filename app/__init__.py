@@ -8,6 +8,7 @@ from flask_jwt_extended import JWTManager
 from flask_migrate import Migrate
 from .config import Config
 
+
 # Initialize extensions
 db = SQLAlchemy()
 jwt = JWTManager()
@@ -29,5 +30,8 @@ def create_app():
     # Register blueprints
     from .routes import main
     app.register_blueprint(main)
+
+    from .auth import auth
+    app.register_blueprint(auth)
 
     return app
