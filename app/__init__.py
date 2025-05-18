@@ -25,7 +25,7 @@ def create_app():
     @jwt.additional_claims_loader
     def add_claims_to_access_token(identity):
         from .models import User
-        user = User.query.get(identity)
+        user = User.query.get(int(identity))
         return {"role": user.role}
 
     migrate.init_app(app, db)
