@@ -28,8 +28,10 @@ def create_app():
         from . import models
         from .routes import main
         from .auth import auth
+        from .menu import menu
         app.register_blueprint(main)
         app.register_blueprint(auth)
+        app.register_blueprint(menu)
     except Exception as e:
         app.logger.error(f"App creation error: {e}")
 
