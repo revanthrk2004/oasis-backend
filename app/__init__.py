@@ -24,14 +24,13 @@ def create_app():
     migrate.init_app(app, db)
     CORS(app)
 
-    # Import models to register with SQLAlchemy
-    from . import models
-
-    # Register blueprints
-    from .routes import main
-    app.register_blueprint(main)
-
-    from .auth import auth
-    app.register_blueprint(auth)
+    try:
+        from . import models
+        from .routes import main
+        from .auth import auth
+        app.register_blueprint(main)
+        app.register_blueprint(auth)
+    except Exception as e:
+        app.logger.error(f"App creation error: {e}")
 
     return app
