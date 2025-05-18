@@ -21,6 +21,13 @@ def create_app():
     # Initialize extensions with app
     db.init_app(app)
     jwt.init_app(app)
+
+    @jwt.additional_claims_loader
+    def add_claims_to_access_token(identity):
+        from .models import User
+        user = User.query.get(identity)
+        return {"role": user.role}
+
     migrate.init_app(app, db)
     CORS(app)
 
@@ -29,9 +36,11 @@ def create_app():
         from .routes import main
         from .auth import auth
         from .menu import menu
+        from .orders import orders
         app.register_blueprint(main)
         app.register_blueprint(auth)
         app.register_blueprint(menu)
+        app.register_blueprint(orders)
     except Exception as e:
         app.logger.error(f"App creation error: {e}")
 
