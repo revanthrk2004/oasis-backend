@@ -9,14 +9,14 @@ orders = Blueprint('orders', __name__)
 def add_to_cart():
     user_id = get_jwt_identity()
     data = request.get_json()
-    item_id = data.get("item_id")
+    menu_item_id = data.get("item_id")  # This is what the user sends
     quantity = data.get("quantity", 1)
 
-    item = MenuItem.query.get(item_id)
+    item = MenuItem.query.get(menu_item_id)
     if not item:
         return jsonify({"error": "Item not found"}), 404
 
-    cart_item = CartItem(user_id=user_id, item_id=item_id, quantity=quantity)
+    cart_item = CartItem(user_id=user_id, menu_item_id=menu_item_id, quantity=quantity)
     db.session.add(cart_item)
     db.session.commit()
     return jsonify({"message": "Item added to cart"}), 201
@@ -29,7 +29,7 @@ def view_cart():
     return jsonify([
         {
             "id": item.id,
-            "item": MenuItem.query.get(item.item_id).name,
+            "item": item.menu_item.name,
             "quantity": item.quantity
         } for item in cart
     ])
@@ -42,18 +42,19 @@ def checkout():
     if not cart_items:
         return jsonify({"error": "Cart is empty"}), 400
 
-    order = Order(user_id=user_id)
+    total = sum(item.menu_item.price * item.quantity for item in cart_items)
+    order = Order(user_id=user_id, total=total)
     db.session.add(order)
-    db.session.flush()  # Get order.id
+    db.session.flush()
 
     for item in cart_items:
         order_item = OrderItem(
             order_id=order.id,
-            item_id=item.item_id,
+            menu_item_id=item.menu_item_id,
             quantity=item.quantity
         )
         db.session.add(order_item)
-        db.session.delete(item)  # Clear from cart
+        db.session.delete(item)
 
     db.session.commit()
     return jsonify({"message": "Order placed successfully"}), 201
@@ -68,7 +69,7 @@ def view_orders():
             "order_id": order.id,
             "items": [
                 {
-                    "name": MenuItem.query.get(item.item_id).name,
+                    "name": item.menu_item.name,
                     "quantity": item.quantity
                 } for item in order.items
             ]
