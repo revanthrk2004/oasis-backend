@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from .models import User, db
 from flask_jwt_extended import create_access_token
 from sqlalchemy.exc import IntegrityError
+from datetime import timedelta
 
 auth = Blueprint('auth', __name__)
 
@@ -31,7 +32,7 @@ def login():
 
     user = User.query.filter_by(username=data["username"]).first()
     if user and user.check_password(data["password"]):
-        access_token = create_access_token(identity=str(user.id), additional_claims={"role": user.role})
+        access_token = create_access_token(identity=str(user.id), additional_claims={"role": user.role}, expires_delta=timedelta(days=365))
 
         return jsonify(access_token=access_token), 200
 
