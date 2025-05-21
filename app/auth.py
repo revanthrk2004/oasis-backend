@@ -19,6 +19,10 @@ def register():
     user = User(username=data["username"], email=data["email"], role="user", oasis_card_id=oasis_card_id)
     user.set_password(data["password"])
 
+       # 🔍 Add debug prints here
+    print("Incoming data:", data)
+    print("User created:", user.username, user.email)
+
     try:
         db.session.add(user)
         db.session.commit()
