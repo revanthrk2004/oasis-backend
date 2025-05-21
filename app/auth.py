@@ -134,3 +134,27 @@ def generate_qr_code():
     buf.seek(0)
 
     return send_file(buf, mimetype='image/png')
+
+
+
+@auth.route('/admin/promote', methods=['POST'])
+@jwt_required()
+def promote_user():
+    current_user_id = get_jwt_identity()
+    current_user = User.query.get(current_user_id)
+
+    if not current_user or current_user.role != 'admin':
+        return jsonify({"error": "Admin access required"}), 403
+
+    data = request.get_json()
+    username = data.get("username")
+    if not username:
+        return jsonify({"error": "Username is required"}), 400
+
+    user = User.query.filter_by(username=username).first()
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    user.role = 'admin'
+    db.session.commit()
+    return jsonify({"message": f"{username} has been promoted to admin"}), 200
