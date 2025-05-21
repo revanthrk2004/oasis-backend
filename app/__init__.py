@@ -37,10 +37,27 @@ def create_app():
         from .auth import auth
         from .menu import menu
         from .orders import orders
+        from .bookings import bookings
+        from .wallet import wallet
+        from .tab import tab
+        from .admin import admin
+        from .discounts import discounts
+        from .happy_hour import happy_hour
+
         app.register_blueprint(main)
         app.register_blueprint(auth)
         app.register_blueprint(menu)
         app.register_blueprint(orders)
+        app.register_blueprint(bookings)
+        app.register_blueprint(wallet)
+        app.register_blueprint(tab)
+        app.register_blueprint(admin)
+        app.register_blueprint(discounts)
+        app.register_blueprint(happy_hour)
+
+
+
+
     except Exception as e:
         app.logger.error(f"App creation error: {e}")
 

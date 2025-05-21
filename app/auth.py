@@ -1,8 +1,11 @@
-from flask import Blueprint, request, jsonify
-from .models import User, db
-from flask_jwt_extended import create_access_token
+from flask import Blueprint, request, jsonify, send_file
+from .models import User, Booking, db
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from sqlalchemy.exc import IntegrityError
 from datetime import timedelta
+import uuid
+import qrcode
+import io
 
 auth = Blueprint('auth', __name__)
 
@@ -12,9 +15,10 @@ def register():
     if not data or not all(k in data for k in ("username", "email", "password")):
         return jsonify({"error": "Missing required fields"}), 400
 
-    user = User(username=data["username"], email=data["email"])
+    oasis_card_id = str(uuid.uuid4()).replace("-", "")[:12]
+    user = User(username=data["username"], email=data["email"], role="user", oasis_card_id=oasis_card_id)
     user.set_password(data["password"])
-    
+
     try:
         db.session.add(user)
         db.session.commit()
@@ -32,9 +36,90 @@ def login():
 
     user = User.query.filter_by(username=data["username"]).first()
     if user and user.check_password(data["password"]):
-        access_token = create_access_token(identity=str(user.id), additional_claims={"role": user.role}, expires_delta=timedelta(days=365))
-
+        access_token = create_access_token(
+            identity=str(user.id),
+            additional_claims={"role": user.role},
+            expires_delta=timedelta(days=365)
+        )
         return jsonify(access_token=access_token), 200
 
     return jsonify({"error": "Invalid credentials"}), 401
 
+@auth.route('/profile', methods=['GET'])
+@jwt_required()
+def get_profile():
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    bookings = [{
+        "id": b.id,
+        "date": b.booking_time.strftime("%Y-%m-%d"),
+        "time": b.booking_time.strftime("%H:%M"),
+        "guests": b.guest_count,
+        "table": b.table_number,
+        "notes": b.note
+    } for b in user.bookings]
+
+    return jsonify({
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "role": user.role,
+        "oasis_card_id": user.oasis_card_id,
+        "bookings": bookings
+    }), 200
+
+@auth.route('/profile', methods=['PATCH'])
+@jwt_required()
+def update_profile():
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    data = request.get_json()
+    updated = False
+
+    if "username" in data:
+        if User.query.filter_by(username=data["username"]).first() and user.username != data["username"]:
+            return jsonify({"error": "Username already taken"}), 409
+        user.username = data["username"]
+        updated = True
+
+    if "email" in data:
+        if User.query.filter_by(email=data["email"]).first() and user.email != data["email"]:
+            return jsonify({"error": "Email already taken"}), 409
+        user.email = data["email"]
+        updated = True
+
+    if "oasis_card_id" in data:
+        if User.query.filter_by(oasis_card_id=data["oasis_card_id"]).first() and user.oasis_card_id != data["oasis_card_id"]:
+            return jsonify({"error": "Oasis Card ID already in use"}), 409
+        user.oasis_card_id = data["oasis_card_id"]
+        updated = True
+
+    if updated:
+        db.session.commit()
+        return jsonify({"message": "Profile updated successfully"}), 200
+    else:
+        return jsonify({"message": "No changes made"}), 200
+
+
+# 📱 GET /user/oasis-card/qr - Generate QR code for Oasis Card ID
+@auth.route('/user/oasis-card/qr', methods=['GET'])
+@jwt_required()
+def generate_qr_code():
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+
+    if not user or not user.oasis_card_id:
+        return jsonify({"error": "Oasis Card ID not set"}), 400
+
+    qr_img = qrcode.make(user.oasis_card_id)
+    buf = io.BytesIO()
+    qr_img.save(buf, format='PNG')
+    buf.seek(0)
+
+    return send_file(buf, mimetype='image/png')

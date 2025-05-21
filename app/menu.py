@@ -1,21 +1,44 @@
 from flask import Blueprint, request, jsonify
-from .models import MenuItem, db
+from .models import MenuItem, HappyHourRule, db
 from flask_jwt_extended import jwt_required
 from .decorators import admin_required
+from datetime import datetime
 
 menu = Blueprint('menu', __name__)
 
-# GET all menu items
+def get_current_discount():
+    now = datetime.now()
+    current_day = now.strftime('%a')  # 'Mon', 'Tue', etc.
+    current_time = now.time()
+
+    rules = HappyHourRule.query.all()
+    for rule in rules:
+        if (current_day in rule.days_active.split(',')) and (rule.start_time <= current_time <= rule.end_time):
+            return rule.discount_percent
+    return 0
+
+# GET all menu items (with dynamic discounts if applicable)
 @menu.route('/menu', methods=['GET'])
 def get_menu():
+    discount_percent = get_current_discount()
     items = MenuItem.query.all()
-    return jsonify([{
-        "id": item.id,
-        "name": item.name,
-        "description": item.description,
-        "price": item.price,
-        "category": item.category
-    } for item in items])
+
+    result = []
+    for item in items:
+        original_price = item.price
+        discounted_price = original_price * (1 - discount_percent / 100) if discount_percent else original_price
+
+        result.append({
+            "id": item.id,
+            "name": item.name,
+            "description": item.description,
+            "price": round(discounted_price, 2),
+            "original_price": round(original_price, 2),
+            "discount_applied": f"{discount_percent}%" if discount_percent else None,
+            "category": item.category
+        })
+
+    return jsonify(result)
 
 # POST a new menu item (admin only)
 @menu.route('/menu', methods=['POST'])
