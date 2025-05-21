@@ -111,13 +111,20 @@ def update_profile():
         return jsonify({"message": "No changes made"}), 200
 
 
-# 📱 GET /user/oasis-card/qr - Generate QR code for Oasis Card ID
+# ✅ QR endpoint supporting token in query param (for mobile image rendering)
 @auth.route('/user/oasis-card/qr', methods=['GET'])
-@jwt_required()
 def generate_qr_code():
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
+    token = request.args.get('token')
+    if not token:
+        return jsonify({"error": "Missing token"}), 400
 
+    try:
+        decoded = decode_token(token)
+        user_id = decoded.get("sub")
+    except Exception:
+        return jsonify({"error": "Invalid token"}), 401
+
+    user = User.query.get(user_id)
     if not user or not user.oasis_card_id:
         return jsonify({"error": "Oasis Card ID not set"}), 400
 
