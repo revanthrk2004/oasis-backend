@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from .models import db, CartItem, Order, OrderItem, MenuItem
+from .models import db, CartItem, Order, OrderItem, MenuItem, User, WalletTransaction
 
 orders = Blueprint('orders', __name__)
 
@@ -9,7 +9,7 @@ orders = Blueprint('orders', __name__)
 def add_to_cart():
     user_id = get_jwt_identity()
     data = request.get_json()
-    menu_item_id = data.get("item_id")  # This is what the user sends
+    menu_item_id = data.get("item_id")
     quantity = data.get("quantity", 1)
 
     item = MenuItem.query.get(menu_item_id)
@@ -38,11 +38,25 @@ def view_cart():
 @jwt_required()
 def checkout():
     user_id = get_jwt_identity()
+    user = User.query.get(user_id)
     cart_items = CartItem.query.filter_by(user_id=user_id).all()
     if not cart_items:
         return jsonify({"error": "Cart is empty"}), 400
 
     total = sum(item.menu_item.price * item.quantity for item in cart_items)
+
+    if user.wallet_balance is None or user.wallet_balance < total:
+        return jsonify({"error": "Insufficient wallet balance"}), 402
+
+    # Deduct from wallet
+    user.wallet_balance -= total
+    db.session.add(WalletTransaction(
+        user_id=user.id,
+        amount=-total,
+        type="purchase",
+        description="Order checkout"
+    ))
+
     order = Order(user_id=user_id, total=total)
     db.session.add(order)
     db.session.flush()
@@ -57,7 +71,7 @@ def checkout():
         db.session.delete(item)
 
     db.session.commit()
-    return jsonify({"message": "Order placed successfully"}), 201
+    return jsonify({"message": "Order placed successfully", "new_balance": round(user.wallet_balance, 2)}), 201
 
 @orders.route('/orders', methods=['GET'])
 @jwt_required()
