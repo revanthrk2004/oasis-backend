@@ -63,11 +63,16 @@ class Order(db.Model):
 class OrderItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     order_id = db.Column(db.Integer, db.ForeignKey('order.id'), nullable=False)
-    menu_item_id = db.Column(db.Integer, db.ForeignKey('menu_item.id'), nullable=False)
+    menu_item_id = db.Column(
+    db.Integer,
+    db.ForeignKey('menu_item.id', ondelete='CASCADE'),
+    nullable=False)
+
     quantity = db.Column(db.Integer, nullable=False)
 
     order = db.relationship('Order', backref='items')
-    menu_item = db.relationship('MenuItem')
+    menu_item = db.relationship('MenuItem', passive_deletes=True)
+
 
 class Booking(db.Model):
     id = db.Column(db.Integer, primary_key=True)
