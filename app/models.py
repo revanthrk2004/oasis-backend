@@ -11,11 +11,18 @@ class User(db.Model):
     oasis_card_id = db.Column(db.String(64), unique=True, nullable=True)
     wallet_balance = db.Column(db.Float, default=0.0)
 
+    # ✅ New fields
+    first_name = db.Column(db.String(50))
+    last_name = db.Column(db.String(50))
+    phone = db.Column(db.String(20))
+    address = db.Column(db.String(200))
+
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+
 
 class WalletTransaction(db.Model):
     id = db.Column(db.Integer, primary_key=True)

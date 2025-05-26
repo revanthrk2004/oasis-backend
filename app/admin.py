@@ -1,14 +1,11 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
-from .models import db, User, Order, Booking, OpenTab, OrderItem, MenuItem, HappyHourRule
+from .models import db, User, Order, Booking, OpenTab, OrderItem, MenuItem, HappyHourRule, AppSetting
 from sqlalchemy.sql import func
 from .decorators import admin_required
-from .models import AppSetting  # NEW import
-
 
 admin = Blueprint('admin', __name__)
 
-# 1. /admin/metrics - Basic Dashboard Stats (excluding admin users)
 @admin.route('/admin/metrics', methods=['GET'])
 @jwt_required()
 @admin_required
@@ -37,8 +34,6 @@ def admin_metrics():
         }
     })
 
-
-# 2. /admin/top-customers - Top spenders (excluding admin)
 @admin.route('/admin/top-customers', methods=['GET'])
 @jwt_required()
 @admin_required
@@ -57,16 +52,14 @@ def top_customers():
         .all()
     )
 
-    top_users = [{
-        "user_id": user.id,
-        "username": user.username,
-        "total_spent": round(user.total_spent, 2)
-    } for user in results]
+    return jsonify([
+        {
+            "user_id": user.id,
+            "username": user.username,
+            "total_spent": round(user.total_spent, 2)
+        } for user in results
+    ])
 
-    return jsonify(top_users)
-
-
-# 3. View all tabs (open or closed) for a specific user
 @admin.route('/admin/user-tabs/<int:user_id>', methods=['GET'])
 @jwt_required()
 @admin_required
@@ -84,8 +77,6 @@ def view_user_tabs(user_id):
         "started_at": tab.started_at.strftime("%Y-%m-%d %H:%M:%S")
     } for tab in tabs]), 200
 
-
-# 4. View all orders for a specific user
 @admin.route('/admin/user-orders/<int:user_id>', methods=['GET'])
 @jwt_required()
 @admin_required
@@ -110,8 +101,6 @@ def view_user_orders(user_id):
         } for order in orders
     ]), 200
 
-
-# 5. View all bookings for a specific user
 @admin.route('/admin/user-bookings/<int:user_id>', methods=['GET'])
 @jwt_required()
 @admin_required
@@ -129,7 +118,6 @@ def view_user_bookings(user_id):
         "booking_time": b.booking_time.strftime("%Y-%m-%d %H:%M"),
         "note": b.note
     } for b in bookings]), 200
-
 
 @admin.route('/admin/happy-hour-metrics', methods=['GET'])
 @jwt_required()
@@ -153,7 +141,6 @@ def happy_hour_metrics():
     item_sales = {}
 
     for rule in rules:
-        # Fetch today's non-admin orders
         start_of_day = datetime(now.year, now.month, now.day, tzinfo=london)
         all_orders = (
             Order.query
@@ -166,11 +153,7 @@ def happy_hour_metrics():
         )
 
         for order in all_orders:
-            if order.created_at.tzinfo is None:
-                order_time = london.localize(order.created_at)
-            else:
-                order_time = order.created_at.astimezone(london)
-
+            order_time = order.created_at if order.created_at.tzinfo else london.localize(order.created_at)
             if rule.start_time <= order_time.time() <= rule.end_time:
                 total_orders += 1
                 total_revenue += order.total
@@ -193,8 +176,6 @@ def happy_hour_metrics():
         "top_discounted_items": [{"name": k, "quantity": v} for k, v in top_items[:5]]
     }), 200
 
-
-# ⚙️ GET /admin/settings - View all settings
 @admin.route('/admin/settings', methods=['GET'])
 @jwt_required()
 @admin_required
@@ -202,8 +183,6 @@ def get_settings():
     settings = AppSetting.query.all()
     return jsonify({s.key: s.value for s in settings}), 200
 
-
-# ⚙️ POST /admin/settings - Set or update a setting
 @admin.route('/admin/settings', methods=['POST'])
 @jwt_required()
 @admin_required
@@ -225,14 +204,11 @@ def update_setting():
     db.session.commit()
     return jsonify({"message": f"Setting '{key}' saved.", "value": value}), 200
 
-
-# 🌍 Public access: GET /settings/public
 @admin.route('/settings/public', methods=['GET'])
 def public_settings():
     allowed_keys = ['business_hours', 'contact_email', 'contact_number', 'announcement_banner']
     settings = AppSetting.query.filter(AppSetting.key.in_(allowed_keys)).all()
     return jsonify({s.key: s.value for s in settings}), 200
-
 
 @admin.route('/admin/scan-user/<oasis_card_id>', methods=['GET'])
 @jwt_required()
@@ -246,7 +222,11 @@ def scan_user_profile(oasis_card_id):
         "id": user.id,
         "username": user.username,
         "email": user.email,
-        "wallet_balance": round(user.wallet_balance, 2),
         "role": user.role,
-        "oasis_card_id": user.oasis_card_id
+        "wallet_balance": round(user.wallet_balance, 2),
+        "oasis_card_id": user.oasis_card_id,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "phone": user.phone,
+        "address": user.address
     }), 200
