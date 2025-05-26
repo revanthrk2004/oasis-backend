@@ -1,0 +1,32 @@
+{
+  "description": "Oasis Membership Card",
+  "formatVersion": 1,
+  "organizationName": "Oasis",
+  "passTypeIdentifier": "pass.com.example.oasis",
+  "serialNumber": "1234567890",
+  "teamIdentifier": "ABCDE12345",
+  "backgroundColor": "rgb(0, 63, 64)",
+  "foregroundColor": "rgb(255, 255, 255)",
+  "labelColor": "rgb(255, 255, 255)",
+  "generic": {
+    "primaryFields": [
+      {
+        "key": "name",
+        "label": "Member",
+        "value": "Revanth R K"
+      }
+    ],
+    "secondaryFields": [
+      {
+        "key": "card_id",
+        "label": "Card ID",
+        "value": "2ea296b72a3e"
+      }
+    ]
+  },
+  "barcode": {
+    "format": "PKBarcodeFormatQR",
+    "message": "2ea296b72a3e",
+    "messageEncoding": "iso-8859-1"
+  }
+}

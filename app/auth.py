@@ -171,3 +171,17 @@ def promote_user():
     user.role = 'admin'
     db.session.commit()
     return jsonify({"message": f"{username} has been promoted to admin"}), 200
+
+
+@auth.route('/user/oasis-card/pass', methods=['GET'])
+@jwt_required()
+def download_pkpass():
+    try:
+        return send_file(
+            "pass_generator/OasisCard.pkpass",
+            mimetype='application/vnd.apple.pkpass',
+            as_attachment=True,
+            download_name="OasisCard.pkpass"
+        )
+    except FileNotFoundError:
+        return jsonify({"error": "Pass file not found"}), 404
