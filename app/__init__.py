@@ -20,19 +20,18 @@ def create_app():
 
     # Initialize extensions with app
     db.init_app(app)
+    from . import models  # <-- moved up
+    migrate.init_app(app, db)
     jwt.init_app(app)
 
     @jwt.additional_claims_loader
     def add_claims_to_access_token(identity):
-        from .models import User
-        user = User.query.get(int(identity))
+        user = models.User.query.get(int(identity))
         return {"role": user.role}
 
-    migrate.init_app(app, db)
     CORS(app)
 
     try:
-        from . import models
         from .routes import main
         from .auth import auth
         from .menu import menu

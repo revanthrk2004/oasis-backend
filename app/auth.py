@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, send_file
 from .models import User, Booking, db
-from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, decode_token
 from sqlalchemy.exc import IntegrityError
 from datetime import timedelta
 import uuid
@@ -12,16 +12,22 @@ auth = Blueprint('auth', __name__)
 @auth.route('/register', methods=['POST'])
 def register():
     data = request.get_json()
-    if not data or not all(k in data for k in ("username", "email", "password")):
+    required_fields = ["username", "email", "password", "first_name", "last_name", "phone", "address"]
+    if not data or not all(k in data for k in required_fields):
         return jsonify({"error": "Missing required fields"}), 400
 
     oasis_card_id = str(uuid.uuid4()).replace("-", "")[:12]
-    user = User(username=data["username"], email=data["email"], role="user", oasis_card_id=oasis_card_id)
+    user = User(
+        username=data["username"],
+        email=data["email"],
+        role="user",
+        oasis_card_id=oasis_card_id,
+        first_name=data["first_name"],
+        last_name=data["last_name"],
+        phone=data["phone"],
+        address=data["address"]
+    )
     user.set_password(data["password"])
-
-       # 🔍 Add debug prints here
-    print("Incoming data:", data)
-    print("User created:", user.username, user.email)
 
     try:
         db.session.add(user)
@@ -72,6 +78,11 @@ def get_profile():
         "email": user.email,
         "role": user.role,
         "oasis_card_id": user.oasis_card_id,
+        "wallet_balance": user.wallet_balance,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "phone": user.phone,
+        "address": user.address,
         "bookings": bookings
     }), 200
 
@@ -104,14 +115,18 @@ def update_profile():
         user.oasis_card_id = data["oasis_card_id"]
         updated = True
 
+    # 🔁 New editable fields
+    for field in ["first_name", "last_name", "phone", "address"]:
+        if field in data:
+            setattr(user, field, data[field])
+            updated = True
+
     if updated:
         db.session.commit()
         return jsonify({"message": "Profile updated successfully"}), 200
     else:
         return jsonify({"message": "No changes made"}), 200
 
-
-# ✅ QR endpoint supporting token in query param (for mobile image rendering)
 @auth.route('/user/oasis-card/qr', methods=['GET'])
 def generate_qr_code():
     token = request.args.get('token')
@@ -134,8 +149,6 @@ def generate_qr_code():
     buf.seek(0)
 
     return send_file(buf, mimetype='image/png')
-
-
 
 @auth.route('/admin/promote', methods=['POST'])
 @jwt_required()
