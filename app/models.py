@@ -40,6 +40,8 @@ class MenuItem(db.Model):
     description = db.Column(db.String(300))
     price = db.Column(db.Float, nullable=False)
     category = db.Column(db.String(100))
+    image_url = db.Column(db.String(300))  # ✅ Add this line
+
 
 class CartItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)

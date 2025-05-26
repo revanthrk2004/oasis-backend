@@ -17,7 +17,7 @@ def get_current_discount():
             return rule.discount_percent
     return 0
 
-# GET all menu items (with dynamic discounts if applicable)
+# ✅ GET all menu items (with discount + image_url)
 @menu.route('/menu', methods=['GET'])
 def get_menu():
     discount_percent = get_current_discount()
@@ -35,23 +35,30 @@ def get_menu():
             "price": round(discounted_price, 2),
             "original_price": round(original_price, 2),
             "discount_applied": f"{discount_percent}%" if discount_percent else None,
-            "category": item.category
+            "category": item.category,
+            "image_url": item.image_url or ""  # ✅ Include image_url
         })
 
     return jsonify(result)
 
-# POST a new menu item (admin only)
+# ✅ POST a new menu item (admin only)
 @menu.route('/menu', methods=['POST'])
 @jwt_required()
 @admin_required
 def add_menu_item():
     data = request.get_json()
-    item = MenuItem(**data)
+    item = MenuItem(
+        name=data.get('name'),
+        description=data.get('description'),
+        price=data.get('price'),
+        category=data.get('category'),
+        image_url=data.get('image_url')  # ✅ Handle image URL on POST
+    )
     db.session.add(item)
     db.session.commit()
     return jsonify({"message": "Menu item added"}), 201
 
-# DELETE a menu item (admin only)
+# ✅ DELETE a menu item (admin only)
 @menu.route('/menu/<int:item_id>', methods=['DELETE'])
 @jwt_required()
 @admin_required
