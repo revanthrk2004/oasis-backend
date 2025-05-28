@@ -6,27 +6,32 @@ from datetime import datetime
 
 menu = Blueprint('menu', __name__)
 
-def get_current_discount():
+def get_current_discount_rule():
     now = datetime.now()
-    current_day = now.strftime('%a')  # 'Mon', 'Tue', etc.
+    current_day = now.strftime('%a')
     current_time = now.time()
 
     rules = HappyHourRule.query.all()
     for rule in rules:
         if (current_day in rule.days_active.split(',')) and (rule.start_time <= current_time <= rule.end_time):
-            return rule.discount_percent
-    return 0
+            return rule
+    return None
 
-# ✅ GET all menu items (with discount + image_url)
 @menu.route('/menu', methods=['GET'])
 def get_menu():
-    discount_percent = get_current_discount()
+    rule = get_current_discount_rule()
     items = MenuItem.query.all()
 
     result = []
     for item in items:
         original_price = item.price
-        discounted_price = original_price * (1 - discount_percent / 100) if discount_percent else original_price
+        discounted_price = original_price
+        discount_applied = None
+
+        if rule and item.category.lower() == 'cocktails' and item.is_happy_hour_eligible:
+            # Pricing for 2 cocktails = £15 => per unit = £7.50
+            discounted_price = 7.50
+            discount_applied = "2 for £15"
 
         result.append({
             "id": item.id,
@@ -34,14 +39,13 @@ def get_menu():
             "description": item.description,
             "price": round(discounted_price, 2),
             "original_price": round(original_price, 2),
-            "discount_applied": f"{discount_percent}%" if discount_percent else None,
+            "discount_applied": discount_applied,
             "category": item.category,
-            "image_url": item.image_url or ""  # ✅ Include image_url
+            "image_url": item.image_url or ""
         })
 
     return jsonify(result)
 
-# ✅ POST a new menu item (admin only)
 @menu.route('/menu', methods=['POST'])
 @jwt_required()
 @admin_required
@@ -52,13 +56,13 @@ def add_menu_item():
         description=data.get('description'),
         price=data.get('price'),
         category=data.get('category'),
-        image_url=data.get('image_url')  # ✅ Handle image URL on POST
+        image_url=data.get('image_url'),
+        is_happy_hour_eligible=data.get('is_happy_hour_eligible', False)
     )
     db.session.add(item)
     db.session.commit()
     return jsonify({"message": "Menu item added"}), 201
 
-# ✅ DELETE a menu item (admin only)
 @menu.route('/menu/<int:item_id>', methods=['DELETE'])
 @jwt_required()
 @admin_required
