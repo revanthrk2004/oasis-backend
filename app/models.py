@@ -11,7 +11,6 @@ class User(db.Model):
     oasis_card_id = db.Column(db.String(64), unique=True, nullable=True)
     wallet_balance = db.Column(db.Float, default=0.0)
 
-    # ✅ New fields
     first_name = db.Column(db.String(50))
     last_name = db.Column(db.String(50))
     phone = db.Column(db.String(20))
@@ -34,13 +33,15 @@ class WalletTransaction(db.Model):
 
     user = db.relationship('User', backref='wallet_transactions')
 
+
 class MenuItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), nullable=False)
     description = db.Column(db.String(300))
     price = db.Column(db.Float, nullable=False)
     category = db.Column(db.String(100))
-    image_url = db.Column(db.String(300))  # ✅ Add this line
+    image_url = db.Column(db.String(300))  # link or fallback
+    is_happy_hour_eligible = db.Column(db.Boolean, default=False)  # ✅ NEW
 
 
 class CartItem(db.Model):
@@ -52,6 +53,7 @@ class CartItem(db.Model):
     user = db.relationship('User', backref='cart_items')
     menu_item = db.relationship('MenuItem')
 
+
 class Order(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -60,14 +62,15 @@ class Order(db.Model):
 
     user = db.relationship('User', backref='orders')
 
+
 class OrderItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     order_id = db.Column(db.Integer, db.ForeignKey('order.id'), nullable=False)
     menu_item_id = db.Column(
-    db.Integer,
-    db.ForeignKey('menu_item.id', ondelete='CASCADE'),
-    nullable=False)
-
+        db.Integer,
+        db.ForeignKey('menu_item.id', ondelete='CASCADE'),
+        nullable=False
+    )
     quantity = db.Column(db.Integer, nullable=False)
 
     order = db.relationship('Order', backref='items')
@@ -85,6 +88,7 @@ class Booking(db.Model):
 
     user = db.relationship('User', backref='bookings')
 
+
 class OpenTab(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -97,19 +101,18 @@ class OpenTab(db.Model):
 
 class HappyHourRule(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    start_time = db.Column(db.Time, nullable=False)  # e.g., 17:00
-    end_time = db.Column(db.Time, nullable=False)    # e.g., 19:00
-    discount_percent = db.Column(db.Float, nullable=False)  # e.g., 50.0 for 50%
-    days_active = db.Column(db.String(20), nullable=False)  # e.g., "Mon,Tue,Wed"
+    start_time = db.Column(db.Time, nullable=False)
+    end_time = db.Column(db.Time, nullable=False)
+    discount_percent = db.Column(db.Float, nullable=False)
+    days_active = db.Column(db.String(20), nullable=False)
 
     def is_active_now(self):
         now = datetime.now()
         current_time = now.time()
-        current_day = now.strftime('%a')  # 'Mon', 'Tue', ...
+        current_day = now.strftime('%a')
         return (self.start_time <= current_time <= self.end_time) and (current_day in self.days_active)
 
 
-# ⚙️ New Model for Admin Settings Panel
 class AppSetting(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     key = db.Column(db.String(100), unique=True, nullable=False)
