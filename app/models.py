@@ -82,6 +82,7 @@ class Booking(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     table_number = db.Column(db.String(10), nullable=False)
     booking_time = db.Column(db.DateTime, nullable=False)
+    end_time = db.Column(db.DateTime, nullable=False)  # ✅ NEW FIELD
     guest_count = db.Column(db.Integer, nullable=False)
     note = db.Column(db.String(300))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
