@@ -248,3 +248,15 @@ def admin_all_bookings():
             "note": b.note
         } for b in bookings
     ]), 200
+
+@admin.route('/admin/bookings/<int:booking_id>', methods=['DELETE'])
+@jwt_required()
+@admin_required
+def admin_cancel_booking(booking_id):
+    booking = Booking.query.get(booking_id)
+    if not booking:
+        return jsonify({"error": "Booking not found"}), 404
+
+    db.session.delete(booking)
+    db.session.commit()
+    return jsonify({"message": "Booking cancelled by admin"}), 200
