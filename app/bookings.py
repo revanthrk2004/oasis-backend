@@ -13,7 +13,6 @@ def create_booking():
     data = request.get_json()
 
     required_fields = ["start_time", "end_time", "guest_count", "table_number"]
-
     if not data or not all(field in data for field in required_fields):
         return jsonify({"error": "Missing required booking fields"}), 400
 
@@ -21,12 +20,9 @@ def create_booking():
         booking_time = datetime.fromisoformat(data['start_time'])
         end_time = datetime.fromisoformat(data['end_time'])
 
-        end_time = datetime.strptime(f"{data['date']} {data['end_time']}", "%Y-%m-%d %H:%M")
-
         if end_time <= booking_time:
             return jsonify({"error": "End time must be after start time"}), 400
 
-        # Check for overlapping bookings on the same table
         overlapping = Booking.query.filter(
             Booking.table_number == data["table_number"],
             Booking.booking_time < end_time,
@@ -44,10 +40,10 @@ def create_booking():
             guest_count=int(data["guest_count"]),
             note=data.get("note")
         )
-
         db.session.add(booking)
         db.session.commit()
         return jsonify({"message": "Booking created successfully"}), 201
+
     except Exception as e:
         return jsonify({"error": f"Failed to create booking: {str(e)}"}), 500
 
@@ -60,11 +56,12 @@ def view_bookings():
     return jsonify([{
         "id": b.id,
         "start_time": b.booking_time.isoformat(),
-        "end_time": b.end_time.isoformat(),
+        "end_time": b.end_time.isoformat() if b.end_time else None,
         "guest_count": b.guest_count,
         "table_number": b.table_number,
         "note": b.note
     } for b in user_bookings]), 200
+
 
 
 # GET /bookings/check - Check if a booking already exists for the time and table type
