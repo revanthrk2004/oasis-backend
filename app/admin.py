@@ -247,7 +247,6 @@ def admin_all_bookings():
              "note": b.note
         } for b in bookings
 ])
-, 200
 
 @admin.route('/admin/bookings/<int:booking_id>', methods=['DELETE'])
 @jwt_required()
