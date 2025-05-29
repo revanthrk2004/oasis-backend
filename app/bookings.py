@@ -12,12 +12,15 @@ def create_booking():
     user_id = get_jwt_identity()
     data = request.get_json()
 
-    required_fields = ["date", "time", "end_time", "guest_count", "table_number"]
+    required_fields = ["start_time", "end_time", "guest_count", "table_number"]
+
     if not data or not all(field in data for field in required_fields):
         return jsonify({"error": "Missing required booking fields"}), 400
 
     try:
-        booking_time = datetime.strptime(f"{data['date']} {data['time']}", "%Y-%m-%d %H:%M")
+        booking_time = datetime.fromisoformat(data['start_time'])
+        end_time = datetime.fromisoformat(data['end_time'])
+
         end_time = datetime.strptime(f"{data['date']} {data['end_time']}", "%Y-%m-%d %H:%M")
 
         if end_time <= booking_time:
@@ -41,6 +44,7 @@ def create_booking():
             guest_count=int(data["guest_count"]),
             note=data.get("note")
         )
+
         db.session.add(booking)
         db.session.commit()
         return jsonify({"message": "Booking created successfully"}), 201
@@ -55,13 +59,13 @@ def view_bookings():
     user_bookings = Booking.query.filter_by(user_id=user_id).all()
     return jsonify([{
         "id": b.id,
-        "date": b.booking_time.strftime("%Y-%m-%d"),
-        "start_time": b.booking_time.strftime("%H:%M"),
-        "end_time": b.end_time.strftime("%H:%M"),
+        "start_time": b.booking_time.isoformat(),
+        "end_time": b.end_time.isoformat(),
         "guest_count": b.guest_count,
         "table_number": b.table_number,
         "note": b.note
     } for b in user_bookings]), 200
+
 
 # GET /bookings/check - Check if a booking already exists for the time and table type
 @bookings.route('/bookings/check', methods=['GET'])
@@ -89,3 +93,38 @@ def check_booking_conflict():
 
     except Exception as e:
         return jsonify({"error": f"Invalid request: {str(e)}"}), 500
+
+@bookings.route('/bookings/<int:booking_id>', methods=['DELETE'])
+@jwt_required()
+def cancel_booking(booking_id):
+    user_id = get_jwt_identity()
+    booking = Booking.query.filter_by(id=booking_id, user_id=user_id).first()
+    if not booking:
+        return jsonify({"error": "Booking not found"}), 404
+
+    db.session.delete(booking)
+    db.session.commit()
+    return jsonify({"message": "Booking cancelled"}), 200
+
+
+@bookings.route('/bookings/<int:booking_id>', methods=['PUT'])
+@jwt_required()
+def reschedule_booking(booking_id):
+    user_id = get_jwt_identity()
+    booking = Booking.query.filter_by(id=booking_id, user_id=user_id).first()
+    if not booking:
+        return jsonify({"error": "Booking not found"}), 404
+
+    data = request.get_json()
+    if "date" in data and "time" in data:
+        new_start = datetime.strptime(f"{data['date']} {data['time']}", "%Y-%m-%d %H:%M")
+        booking.booking_time = new_start
+    if "end_time" in data:
+        booking.end_time = datetime.strptime(f"{data['date']} {data['end_time']}", "%Y-%m-%d %H:%M")
+    if "guest_count" in data:
+        booking.guest_count = int(data["guest_count"])
+    if "note" in data:
+        booking.note = data["note"]
+
+    db.session.commit()
+    return jsonify({"message": "Booking rescheduled"}), 200
