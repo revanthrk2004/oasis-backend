@@ -238,15 +238,15 @@ def admin_all_bookings():
     bookings = Booking.query.order_by(Booking.booking_time.desc()).all()
     return jsonify([
         {
-             "id": b.id,
-             "user_name": b.user.name if b.user else None,
-             "table_number": b.table_number,
-             "guest_count": b.guest_count,
-             "start_time": b.start_time.isoformat() if b.start_time else None,
-             "end_time": b.end_time.isoformat() if b.end_time else None,
-             "note": b.note
+            "id": b.id,
+            "user_name": b.user.username if b.user else None,
+            "table_number": b.table_number,
+            "guest_count": b.guest_count,
+            "start_time": b.start_time.isoformat() if b.start_time else None,
+            "end_time": b.end_time.isoformat() if b.end_time else None,
+            "note": b.note
         } for b in bookings
-])
+    ])
 
 @admin.route('/admin/bookings/<int:booking_id>', methods=['DELETE'])
 @jwt_required()
