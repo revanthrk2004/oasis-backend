@@ -230,3 +230,21 @@ def scan_user_profile(oasis_card_id):
         "phone": user.phone,
         "address": user.address
     }), 200
+
+@admin.route('/admin/bookings', methods=['GET'])
+@jwt_required()
+@admin_required
+def admin_all_bookings():
+    bookings = Booking.query.order_by(Booking.booking_time.desc()).all()
+    return jsonify([
+        {
+            "booking_id": b.id,
+            "user_id": b.user_id,
+            "username": b.user.username,
+            "table_number": b.table_number,
+            "guest_count": b.guest_count,
+            "start_time": b.booking_time.isoformat(),
+            "end_time": b.end_time.isoformat(),
+            "note": b.note
+        } for b in bookings
+    ]), 200
