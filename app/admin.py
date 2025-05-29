@@ -242,7 +242,8 @@ def admin_all_bookings():
             "user_name": b.user.username if b.user else None,
             "table_number": b.table_number,
             "guest_count": b.guest_count,
-            "start_time": b.start_time.isoformat() if b.start_time else None,
+            "start_time": b.booking_time.isoformat() if b.booking_time else None,
+
             "end_time": b.end_time.isoformat() if b.end_time else None,
             "note": b.note
         } for b in bookings
