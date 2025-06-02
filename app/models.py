@@ -105,13 +105,17 @@ class HappyHourRule(db.Model):
     start_time = db.Column(db.Time, nullable=False)
     end_time = db.Column(db.Time, nullable=False)
     discount_percent = db.Column(db.Float, nullable=False)
-    days_active = db.Column(db.String(20), nullable=False)
+    deal_description = db.Column(db.String(100), nullable=True)
+    days_active = db.Column(db.String(100), nullable=False)  # increased from 20 to 100
 
     def is_active_now(self):
         now = datetime.now()
         current_time = now.time()
-        current_day = now.strftime('%a')
-        return (self.start_time <= current_time <= self.end_time) and (current_day in self.days_active)
+        current_day = now.strftime('%A')  # make sure to match full day name (e.g., "Monday")
+        return (
+            self.start_time <= current_time <= self.end_time and
+            current_day in self.days_active
+        )
 
 
 class AppSetting(db.Model):

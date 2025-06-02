@@ -32,14 +32,16 @@ def add_happy_hour():
         rule = HappyHourRule(
             start_time=time.fromisoformat(data["start_time"]),
             end_time=time.fromisoformat(data["end_time"]),
-            discount_percent=int(data["discount_percent"]),
-            days_active=data["days_active"]
+            discount_percent=int(data.get("discount_percent", 0)),
+            deal_description=data.get("deal_description", ""),
+            days_active=",".join(data["days_active"])
         )
         db.session.add(rule)
         db.session.commit()
         return jsonify({"message": "Happy Hour rule added"}), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 400
+
 
 # PATCH update rule
 @happy_hour.route('/admin/happy-hour/<int:rule_id>', methods=['PATCH'])
