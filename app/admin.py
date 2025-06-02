@@ -119,10 +119,11 @@ def view_user_bookings(user_id):
             "start_time": b.start_time.isoformat() if hasattr(b, "start_time") else None,
             "end_time": b.end_time.isoformat() if hasattr(b, "end_time") else None,
             "note": b.note,
-            "user_full_name": f"{user.first_name} {user.last_name}",
-            "user_email": user.email,
-            "user_phone": user.phone,
-            "user_address": user.address
+                "first_name": b.user.first_name,
+                "last_name": b.user.last_name,
+                "email": b.user.email,
+                "phone": b.user.phone,
+                "address": b.user.address
         }
         for b in bookings
     ]), 200
