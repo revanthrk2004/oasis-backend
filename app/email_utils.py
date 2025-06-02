@@ -1,18 +1,18 @@
-import os
-from sendgrid import SendGridAPIClient
+import sendgrid
 from sendgrid.helpers.mail import Mail
+import os
 
-def send_email(to_email, subject, content):
-    message = Mail(
-        from_email='oasisappreset@gmail.com',  # Use a verified sender in SendGrid
-        to_emails=to_email,
-        subject=subject,
-        plain_text_content=content
-    )
+def send_email(to, subject, content):
     try:
-        sg = SendGridAPIClient(api_key=os.getenv("SENDGRID_API_KEY"))
-        response = sg.send(message)
-        return response.status_code == 202
+        sg = sendgrid.SendGridAPIClient(api_key=os.getenv("SENDGRID_API_KEY"))
+        email = Mail(
+            from_email="oasisappreset@gmail.com",
+            to_emails=to,
+            subject=subject,
+            plain_text_content=content
+        )
+        response = sg.send(email)
+        return response.status_code < 400
     except Exception as e:
         print(f"SendGrid Error: {e}")
         return False
