@@ -248,15 +248,21 @@ def admin_all_bookings():
     return jsonify([
         {
             "id": b.id,
-            "user_name": b.user.username if b.user else None,
             "table_number": b.table_number,
             "guest_count": b.guest_count,
             "start_time": b.booking_time.isoformat() if b.booking_time else None,
-
             "end_time": b.end_time.isoformat() if b.end_time else None,
-            "note": b.note
+            "note": b.note,
+            "user": {
+                "first_name": b.user.first_name,
+                "last_name": b.user.last_name,
+                "email": b.user.email,
+                "phone": b.user.phone,
+                "address": b.user.address
+            } if b.user else None
         } for b in bookings
-    ])
+    ]), 200
+
 
 @admin.route('/admin/bookings/<int:booking_id>', methods=['DELETE'])
 @jwt_required()
