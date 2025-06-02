@@ -228,7 +228,7 @@ def forgot_password():
         return jsonify({"error": "No account found with this email"}), 404
 
     token = serializer.dumps(user.email, salt="password-reset-salt")
-    reset_url = f"https://yourfrontend.com/reset-password/{token}"
+    reset_url = f"https://lambent-buttercream-b7ea37.netlify.app/reset-password/{token}"
 
     subject = "Password Reset for Oasis Bar"
     content = f"Hello {user.first_name},\n\nUse the following link to reset your password:\n{reset_url}\n\nLink expires in 30 minutes."
