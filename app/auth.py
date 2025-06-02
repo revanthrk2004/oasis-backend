@@ -6,6 +6,11 @@ from datetime import timedelta
 import uuid
 import qrcode
 import io
+from .email_utils import send_email
+from itsdangerous import URLSafeTimedSerializer
+from flask import url_for
+
+serializer = URLSafeTimedSerializer(os.environ.get("SECRET_KEY"))
 
 auth = Blueprint('auth', __name__)
 
@@ -185,3 +190,52 @@ def download_pkpass():
         )
     except FileNotFoundError:
         return jsonify({"error": "Pass file not found"}), 404
+
+
+@auth.route('/forgot-username', methods=['POST'])
+def forgot_username():
+    data = request.get_json()
+    email = data.get("email")
+
+    if not email:
+        return jsonify({"error": "Email is required"}), 400
+
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({"error": "No account found with this email"}), 404
+
+    subject = "Your Oasis Bar Username"
+    content = f"Hello {user.first_name},\n\nYour username is: {user.username}\n\nCheers,\nOasis Bar Team"
+    
+    if send_email(user.email, subject, content):
+        return jsonify({"message": "Username sent to your email"}), 200
+    else:
+        return jsonify({"error": "Failed to send email"}), 500
+
+
+
+@auth.route('/forgot-password', methods=['POST'])
+def forgot_password():
+    data = request.get_json()
+    email = data.get("email")
+
+    if not email:
+        return jsonify({"error": "Email is required"}), 400
+
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({"error": "No account found with this email"}), 404
+
+    token = serializer.dumps(user.email, salt="password-reset-salt")
+    reset_url = f"https://yourfrontend.com/reset-password/{token}"
+
+    subject = "Password Reset for Oasis Bar"
+    content = f"Hello {user.first_name},\n\nUse the following link to reset your password:\n{reset_url}\n\nLink expires in 30 minutes."
+
+    if send_email(user.email, subject, content):
+        return jsonify({"message": "Password reset link sent to your email"}), 200
+    else:
+        return jsonify({"error": "Failed to send email"}), 500
+
+
+
