@@ -10,6 +10,7 @@ import os
 from .email_utils import send_email
 from itsdangerous import URLSafeTimedSerializer
 from flask import url_for
+from urllib.parse import quote_plus
 
 serializer = URLSafeTimedSerializer(os.environ.get("SECRET_KEY"))
 
@@ -228,6 +229,7 @@ def forgot_password():
         return jsonify({"error": "No account found with this email"}), 404
 
     token = serializer.dumps(user.email, salt="password-reset-salt")
+    encoded_token = quote_plus(token)  # ✅ Encode the token safely
     reset_url = f"https://spectacular-naiad-b9e41d.netlify.app/reset-password/{token}"
 
     subject = "Password Reset for Oasis Bar"
