@@ -230,7 +230,7 @@ def forgot_password():
 
     token = serializer.dumps(user.email, salt="password-reset-salt")
     encoded_token = quote_plus(token)  # ✅ Encode the token safely
-    reset_url = f"https://spectacular-naiad-b9e41d.netlify.app/reset-password/{token}"
+    reset_url = f"https://lighthearted-puppy-bd0fb7.netlify.app/reset-password/{token}"
 
     subject = "Password Reset for Oasis Bar"
     content = f"Hello {user.first_name},\n\nUse the following link to reset your password:\n{reset_url}\n\nLink expires in 30 minutes."
