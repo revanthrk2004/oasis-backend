@@ -6,6 +6,7 @@ from datetime import timedelta
 import uuid
 import qrcode
 import io
+import os
 from .email_utils import send_email
 from itsdangerous import URLSafeTimedSerializer
 from flask import url_for
