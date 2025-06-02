@@ -111,13 +111,21 @@ def view_user_bookings(user_id):
 
     bookings = Booking.query.filter_by(user_id=user_id).order_by(Booking.booking_time.desc()).all()
 
-    return jsonify([{
-        "booking_id": b.id,
-        "table_number": b.table_number,
-        "guest_count": b.guest_count,
-        "booking_time": b.booking_time.strftime("%Y-%m-%d %H:%M"),
-        "note": b.note
-    } for b in bookings]), 200
+    return jsonify([
+        {
+            "booking_id": b.id,
+            "table_number": b.table_number,
+            "guest_count": b.guest_count,
+            "start_time": b.start_time.isoformat() if hasattr(b, "start_time") else None,
+            "end_time": b.end_time.isoformat() if hasattr(b, "end_time") else None,
+            "note": b.note,
+            "user_full_name": f"{user.first_name} {user.last_name}",
+            "user_email": user.email,
+            "user_phone": user.phone,
+            "user_address": user.address
+        }
+        for b in bookings
+    ]), 200
 
 @admin.route('/admin/happy-hour-metrics', methods=['GET'])
 @jwt_required()
