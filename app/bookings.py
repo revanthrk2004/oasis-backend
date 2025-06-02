@@ -64,32 +64,7 @@ def view_bookings():
 
 
 
-# GET /bookings/check - Check if a booking already exists for the time and table type
-@bookings.route('/bookings/check', methods=['GET'])
-@jwt_required()
-def check_booking_conflict():
-    date = request.args.get('date')
-    time = request.args.get('time')
-    end_time_str = request.args.get('end_time')
-    table_number = request.args.get('table_number')
 
-    if not date or not time or not end_time_str or not table_number:
-        return jsonify({"error": "Missing parameters"}), 400
-
-    try:
-        booking_time = datetime.strptime(f"{date} {time}", "%Y-%m-%d %H:%M")
-        end_time = datetime.strptime(f"{date} {end_time_str}", "%Y-%m-%d %H:%M")
-
-        existing = Booking.query.filter(
-            Booking.table_number == table_number,
-            Booking.booking_time < end_time,
-            Booking.end_time > booking_time
-        ).first()
-
-        return jsonify({"conflict": bool(existing)}), 200
-
-    except Exception as e:
-        return jsonify({"error": f"Invalid request: {str(e)}"}), 500
 
 @bookings.route('/bookings/<int:booking_id>', methods=['DELETE'])
 @jwt_required()
