@@ -4,7 +4,7 @@ from sendgrid.helpers.mail import Mail
 
 def send_email(to_email, subject, content):
     message = Mail(
-        from_email='oasisappreset.com',  # Use a verified sender in SendGrid
+        from_email='oasisappreset@gmail.com',  # Use a verified sender in SendGrid
         to_emails=to_email,
         subject=subject,
         plain_text_content=content
