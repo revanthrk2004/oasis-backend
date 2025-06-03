@@ -122,3 +122,15 @@ class AppSetting(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     key = db.Column(db.String(100), unique=True, nullable=False)
     value = db.Column(db.String(500), nullable=False)
+
+
+
+class Coupon(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.String(256), unique=True, nullable=False)  # Unique scanned string
+    raw_data = db.Column(db.Text)  # In case you want to store full raw string
+    redeemed = db.Column(db.Boolean, default=False)
+    redeemed_by = db.Column(db.Integer, db.ForeignKey('user.id'))
+    redeemed_at = db.Column(db.DateTime)
+
+    user = db.relationship('User', backref='redeemed_coupons')
