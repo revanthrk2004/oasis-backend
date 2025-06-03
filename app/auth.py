@@ -11,6 +11,9 @@ from .email_utils import send_email
 from itsdangerous import URLSafeTimedSerializer
 from flask import url_for
 from urllib.parse import quote_plus
+from .models import Coupon
+from datetime import datetime
+
 
 serializer = URLSafeTimedSerializer(os.environ.get("SECRET_KEY"))
 
@@ -242,3 +245,34 @@ def forgot_password():
 
 
 
+@auth.route('/redeem-coupon', methods=['POST'])
+@jwt_required()
+def redeem_coupon():
+    user_id = get_jwt_identity()
+    data = request.get_json()
+    scanned_text = data.get("code")
+
+    if not scanned_text:
+        return jsonify({"error": "No coupon code found"}), 400
+
+    code = scanned_text.strip()
+    coupon = Coupon.query.filter_by(code=code).first()
+
+    if coupon:
+        if coupon.redeemed:
+            return jsonify({"error": "This coupon has already been redeemed"}), 409
+        coupon.redeemed = True
+        coupon.redeemed_by = user_id
+        coupon.redeemed_at = datetime.utcnow()
+    else:
+        coupon = Coupon(
+            code=code,
+            raw_data=scanned_text,
+            redeemed=True,
+            redeemed_by=user_id,
+            redeemed_at=datetime.utcnow()
+        )
+        db.session.add(coupon)
+
+    db.session.commit()
+    return jsonify({"message": "Coupon redeemed successfully"}), 200
