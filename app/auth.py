@@ -333,3 +333,26 @@ def ai_chatbot():
     except Exception as e:
         print("AI error:", e)
         return jsonify({"error": "AI service failed"}), 500
+
+
+@auth.route('/chatlogs', methods=['GET'])
+@jwt_required()
+def get_chat_logs():
+    current_user_id = get_jwt_identity()
+    current_user = User.query.get(current_user_id)
+
+    if not current_user or current_user.role != 'admin':
+        return jsonify({"error": "Admin access required"}), 403
+
+    from .models import ChatLog  # ensure ChatLog is imported
+
+    logs = ChatLog.query.order_by(ChatLog.timestamp.desc()).limit(100).all()
+
+    return jsonify([{
+        "id": log.id,
+        "user_id": log.user_id,
+        "question": log.question,
+        "answer": log.answer,
+        "flagged": log.flagged,
+        "timestamp": log.timestamp.isoformat()
+    } for log in logs]), 200
