@@ -315,23 +315,19 @@ def ai_chatbot():
             temperature=0.5,
         )
 
-        reply = response.choices[0].message.content
+reply = response.choices[0].message.content
 
-        # ✅ Flag vague replies
-        flagged = any(p in reply.lower() for p in ["i don't know", "not sure", "unable to", "no information"])
+# ✅ Log to DB
+log = ChatLog(
+    user_id=get_jwt_identity() if "Authorization" in request.headers else None,
+    question=user_message,
+    answer=reply,
+    flagged="I don't know" in reply
+)
+db.session.add(log)
+db.session.commit()
 
-        # ✅ Store chat log
-        from .models import ChatLog
-        log = ChatLog(
-            user_id=user_id,
-            user_message=user_message,
-            ai_reply=reply,
-            flagged_unanswered=flagged
-        )
-        db.session.add(log)
-        db.session.commit()
-
-        return jsonify({"reply": reply})
+return jsonify({"reply": reply})
 
     except Exception as e:
         print("AI error:", e)
