@@ -7,7 +7,7 @@ import uuid
 import qrcode
 import io
 import os
-import openai
+from openai import OpenAI
 from .email_utils import send_email
 from itsdangerous import URLSafeTimedSerializer
 from flask import url_for
@@ -18,7 +18,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 serializer = URLSafeTimedSerializer(os.environ.get("SECRET_KEY"))
-
+client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 auth = Blueprint('auth', __name__)
 
 @auth.route('/register', methods=['POST'])
@@ -281,6 +281,8 @@ def redeem_coupon():
 
 
 
+
+
 @auth.route('/chatbot', methods=['POST'])
 def ai_chatbot():
     data = request.get_json()
@@ -290,9 +292,7 @@ def ai_chatbot():
         return jsonify({"error": "Message is required"}), 400
 
     try:
-        openai.api_key = os.environ.get("OPENAI_API_KEY")
-
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model="gpt-4",
             messages=[
                 {
@@ -308,7 +308,7 @@ def ai_chatbot():
             temperature=0.7
         )
 
-        reply = response['choices'][0]['message']['content']
+        reply = response.choices[0].message.content
         return jsonify({"reply": reply})
 
     except Exception as e:
