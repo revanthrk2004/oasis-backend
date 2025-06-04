@@ -281,7 +281,6 @@ def redeem_coupon():
     return jsonify({"message": "Coupon redeemed successfully"}), 200
 
 
-
 @auth.route('/chatbot', methods=['POST'])
 def ai_chatbot():
     data = request.get_json()
@@ -291,8 +290,9 @@ def ai_chatbot():
         return jsonify({"error": "Message is required"}), 400
 
     try:
-        # Load structured data
-        with open("oasis_info.json", "r") as file:
+        # ✅ Get the correct file path no matter where the server is run from
+        file_path = os.path.join(os.path.dirname(__file__), "oasis_info.json")
+        with open(file_path, "r") as file:
             oasis_info = json.load(file)
 
         prompt = (
