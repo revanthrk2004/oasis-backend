@@ -282,10 +282,6 @@ def redeem_coupon():
 
 
 
-
-
-
-
 @auth.route('/chatbot', methods=['POST'])
 def ai_chatbot():
     data = request.get_json()
@@ -295,26 +291,25 @@ def ai_chatbot():
         return jsonify({"error": "Message is required"}), 400
 
     try:
-        # Load structured Oasis info from file
+        # Load structured data
         with open("oasis_info.json", "r") as file:
             oasis_info = json.load(file)
 
         prompt = (
-            f"You are a friendly AI assistant for Oasis Bar & Terrace in Canary Wharf, London.\n\n"
-            f"Here’s the bar info:\n"
+            "You are an AI assistant for Oasis Bar & Terrace in Canary Wharf, London. "
+            "Use only the following data to answer questions accurately and clearly:\n\n"
             f"{json.dumps(oasis_info, indent=2)}\n\n"
             f"User message: {user_message}\n"
-            f"Based on the above info, respond accurately."
+            "Only answer based on the above data. Do not make up information."
         )
 
-        openai.api_key = os.environ.get("OPENAI_API_KEY")
-        response = openai.chat.completions.create(
+        response = client.chat.completions.create(
             model="gpt-4",
             messages=[
-                {"role": "system", "content": "Answer based only on the provided Oasis Bar info."},
+                {"role": "system", "content": "You are an accurate and helpful assistant using structured info only."},
                 {"role": "user", "content": prompt}
             ],
-            max_tokens=200,
+            max_tokens=300,
             temperature=0.5,
         )
 
