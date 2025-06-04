@@ -282,15 +282,17 @@ def redeem_coupon():
 
 
 @auth.route('/chatbot', methods=['POST'])
+@jwt_required(optional=True)
 def ai_chatbot():
     data = request.get_json()
     user_message = data.get("message")
+    user_id = get_jwt_identity()
 
     if not user_message:
         return jsonify({"error": "Message is required"}), 400
 
     try:
-        # ✅ Get the correct file path no matter where the server is run from
+        # ✅ Load structured data
         file_path = os.path.join(os.path.dirname(__file__), "oasis_info.json")
         with open(file_path, "r") as file:
             oasis_info = json.load(file)
@@ -314,6 +316,21 @@ def ai_chatbot():
         )
 
         reply = response.choices[0].message.content
+
+        # ✅ Flag vague replies
+        flagged = any(p in reply.lower() for p in ["i don't know", "not sure", "unable to", "no information"])
+
+        # ✅ Store chat log
+        from .models import ChatLog
+        log = ChatLog(
+            user_id=user_id,
+            user_message=user_message,
+            ai_reply=reply,
+            flagged_unanswered=flagged
+        )
+        db.session.add(log)
+        db.session.commit()
+
         return jsonify({"reply": reply})
 
     except Exception as e:

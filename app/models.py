@@ -134,3 +134,14 @@ class Coupon(db.Model):
     redeemed_at = db.Column(db.DateTime)
 
     user = db.relationship('User', backref='redeemed_coupons')
+
+
+class ChatLog(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    question = db.Column(db.Text, nullable=False)
+    answer = db.Column(db.Text, nullable=False)
+    flagged = db.Column(db.Boolean, default=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship('User', backref='chat_logs')
