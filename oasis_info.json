@@ -1,0 +1,42 @@
+{
+  "name": "Oasis Bar & Terrace",
+  "location": "Canada Square Park, Canary Wharf, London, E14 5AB",
+  "contact": {
+    "phone": "0203 633 5855",
+    "email": "reservations@myoasisbar.co.uk",
+    "website": "https://myoasisbar.co.uk"
+  },
+  "description": "A stylish alfresco oasis in the heart of Canary Wharf, offering a rooftop terrace with panoramic views, a diverse Middle Eastern-inspired menu, handcrafted cocktails, and event hosting for up to 700 guests.",
+  "menus": {
+    "food": "Middle Eastern-inspired dishes including creamy hummus, smoky baba ganoush, and tender grilled skewers.",
+    "drinks": "Seven premium draughts, international wines, and handcrafted cocktails infused with creativity and passion."
+  },
+  "events": [
+    {
+      "name": "Bottomless Brunch",
+      "description": "Every Saturday, enjoy 90 minutes of unlimited Prosecco, Pravha beer, Mojito cocktails or Pornstar Martini, paired with a mouth-watering menu and live beats from our resident DJ.",
+      "time": "Every Saturday, multiple start times between 12:00 and 21:00",
+      "price": "£55.00"
+    }
+  ],
+  "operating_hours": {
+    "bar": {
+      "monday": "11:00–23:00",
+      "tuesday": "11:00–23:00",
+      "wednesday": "11:00–00:00",
+      "thursday": "11:00–00:00",
+      "friday": "11:00–00:00",
+      "saturday": "10:00–00:00",
+      "sunday": "10:00–21:00"
+    },
+    "terrace": {
+      "monday": "Closed",
+      "tuesday": "15:00–23:00",
+      "wednesday": "15:00–00:00",
+      "thursday": "15:00–00:00",
+      "friday": "15:00–00:00",
+      "saturday": "12:00–00:00",
+      "sunday": "Closed"
+    }
+  }
+}

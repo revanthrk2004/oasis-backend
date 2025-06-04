@@ -7,6 +7,7 @@ import uuid
 import qrcode
 import io
 import os
+import json
 from openai import OpenAI
 from .email_utils import send_email
 from itsdangerous import URLSafeTimedSerializer
@@ -283,6 +284,8 @@ def redeem_coupon():
 
 
 
+
+
 @auth.route('/chatbot', methods=['POST'])
 def ai_chatbot():
     data = request.get_json()
@@ -292,20 +295,27 @@ def ai_chatbot():
         return jsonify({"error": "Message is required"}), 400
 
     try:
-        response = client.chat.completions.create(
+        # Load structured Oasis info from file
+        with open("oasis_info.json", "r") as file:
+            oasis_info = json.load(file)
+
+        prompt = (
+            f"You are a friendly AI assistant for Oasis Bar & Terrace in Canary Wharf, London.\n\n"
+            f"Here’s the bar info:\n"
+            f"{json.dumps(oasis_info, indent=2)}\n\n"
+            f"User message: {user_message}\n"
+            f"Based on the above info, respond accurately."
+        )
+
+        openai.api_key = os.environ.get("OPENAI_API_KEY")
+        response = openai.chat.completions.create(
             model="gpt-4",
             messages=[
-                {
-                    "role": "system",
-                    "content": "You are an AI assistant for Oasis Bar & Terrace. Help customers with menu, timings, bookings, offers, and general queries about the bar. Be friendly and concise."
-                },
-                {
-                    "role": "user",
-                    "content": user_message
-                }
+                {"role": "system", "content": "Answer based only on the provided Oasis Bar info."},
+                {"role": "user", "content": prompt}
             ],
-            max_tokens=150,
-            temperature=0.7
+            max_tokens=200,
+            temperature=0.5,
         )
 
         reply = response.choices[0].message.content
