@@ -315,19 +315,20 @@ def ai_chatbot():
             temperature=0.5,
         )
 
-reply = response.choices[0].message.content
+        reply = response.choices[0].message.content
 
-# ✅ Log to DB
-log = ChatLog(
-    user_id=get_jwt_identity() if "Authorization" in request.headers else None,
-    question=user_message,
-    answer=reply,
-    flagged="I don't know" in reply
-)
-db.session.add(log)
-db.session.commit()
+        # ✅ Log to DB
+        from .models import ChatLog  # make sure you import this
+        log = ChatLog(
+            user_id=user_id if user_id else None,
+            question=user_message,
+            answer=reply,
+            flagged="I don't know" in reply
+        )
+        db.session.add(log)
+        db.session.commit()
 
-return jsonify({"reply": reply})
+        return jsonify({"reply": reply})
 
     except Exception as e:
         print("AI error:", e)
