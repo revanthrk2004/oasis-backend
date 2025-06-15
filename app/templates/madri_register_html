@@ -38,7 +38,7 @@
       const payload = Object.fromEntries(form.entries());
       payload.consent_given = !!payload.consent_given;
 
-      const resp = await fetch('/madri/register', {
+      const resp = await fetch('https://oasis-backend-1.onrender.com/madri/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
