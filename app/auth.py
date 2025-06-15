@@ -19,7 +19,7 @@ from dotenv import load_dotenv
 load_dotenv()
 from .models import VoucherRegistration
 from .email_utils import send_email  # Ensure it supports attachments
-
+from flask import send_from_directory
 
 
 serializer = URLSafeTimedSerializer(os.environ.get("SECRET_KEY"))
@@ -450,5 +450,4 @@ def register_for_madri():
 
 @auth.route('/madri/register', methods=['GET'])
 def madri_register_info():
-    return jsonify({"message": "POST to this endpoint with registration data to claim your free Madri pint."})
-
+    return send_from_directory('static', 'madri_register.html')
