@@ -1,6 +1,7 @@
 from . import db
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
+import uuid
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -127,13 +128,26 @@ class AppSetting(db.Model):
 
 class Coupon(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    code = db.Column(db.String(256), unique=True, nullable=False)  # Unique scanned string
-    raw_data = db.Column(db.Text)  # In case you want to store full raw string
-    redeemed = db.Column(db.Boolean, default=False)
+    code = db.Column(db.String(64), unique=True, nullable=False)  # From VoucherRegistration.voucher_id
+    scanned_at = db.Column(db.DateTime, default=datetime.utcnow)
     redeemed_by = db.Column(db.Integer, db.ForeignKey('user.id'))
-    redeemed_at = db.Column(db.DateTime)
+    user = db.relationship('User', backref='scanned_coupons')
 
-    user = db.relationship('User', backref='redeemed_coupons')
+    # Duplicated user details from VoucherRegistration
+    first_name = db.Column(db.String(50))
+    middle_name = db.Column(db.String(50))
+    last_name = db.Column(db.String(50))
+    email = db.Column(db.String(120))
+    phone = db.Column(db.String(20))
+    dob = db.Column(db.Date)
+    house_number = db.Column(db.String(20))
+    street = db.Column(db.String(100))
+    city = db.Column(db.String(50))
+    county = db.Column(db.String(50))
+    postcode = db.Column(db.String(20))
+    country = db.Column(db.String(50))
+
+    raw_data = db.Column(db.Text)  # Optional: JSON snapshot
 
 
 class ChatLog(db.Model):
@@ -145,3 +159,30 @@ class ChatLog(db.Model):
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
     user = db.relationship('User', backref='chat_logs')
+
+
+import uuid
+from datetime import datetime
+
+class VoucherRegistration(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    voucher_id = db.Column(db.String(64), unique=True, nullable=False, default=lambda: str(uuid.uuid4()))
+
+    first_name = db.Column(db.String(50), nullable=False)
+    middle_name = db.Column(db.String(50))
+    last_name = db.Column(db.String(50), nullable=False)
+    email = db.Column(db.String(120), nullable=False)
+    phone = db.Column(db.String(20), nullable=False)
+    dob = db.Column(db.Date, nullable=False)
+
+    house_number = db.Column(db.String(20), nullable=False)
+    street = db.Column(db.String(100), nullable=False)
+    city = db.Column(db.String(50), nullable=False)
+    county = db.Column(db.String(50), nullable=False)
+    postcode = db.Column(db.String(20), nullable=False)
+    country = db.Column(db.String(50), nullable=False)
+
+    consent_given = db.Column(db.Boolean, default=False)
+    is_used = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    used_at = db.Column(db.DateTime, nullable=True)

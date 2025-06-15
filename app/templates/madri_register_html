@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Free Madri Pint Voucher</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 600px; margin: 2rem auto; padding: 1rem; }
+    label { display: block; margin-top: 1rem; }
+    input, select { width: 100%; padding: 0.5rem; margin-top: 0.5rem; }
+    button { margin-top: 1.5rem; padding: 0.75rem 1.5rem; font-size: 1rem; }
+  </style>
+</head>
+<body>
+  <h1>Claim Your Free Madri Pint</h1>
+  <form id="voucherForm">
+    <label>First Name: <input type="text" name="first_name" required></label>
+    <label>Middle Name (optional): <input type="text" name="middle_name"></label>
+    <label>Last Name: <input type="text" name="last_name" required></label>
+    <label>Email: <input type="email" name="email" required></label>
+    <label>Phone: <input type="tel" name="phone" required></label>
+    <label>DOB: <input type="date" name="dob" required></label>
+    <label>House/Flat No: <input type="text" name="house_number" required></label>
+    <label>Street: <input type="text" name="street" required></label>
+    <label>City: <input type="text" name="city" required></label>
+    <label>County: <input type="text" name="county" required></label>
+    <label>Postcode: <input type="text" name="postcode" required></label>
+    <label>Country: <input type="text" name="country" required></label>
+    <label><input type="checkbox" name="consent_given" required> I confirm I am 18+ and agree to terms</label>
+    <button type="submit">Submit & Get Voucher</button>
+  </form>
+  <p id="message"></p>
+
+  <script>
+    document.getElementById('voucherForm').addEventListener('submit', async ev => {
+      ev.preventDefault();
+      const form = new FormData(ev.target);
+      const payload = Object.fromEntries(form.entries());
+      payload.consent_given = !!payload.consent_given;
+
+      const resp = await fetch('/madri/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const json = await resp.json();
+      document.getElementById('message').innerText = json.message || json.error;
+    });
+  </script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify, send_file
+from flask import Blueprint, request, jsonify, send_file, render_template
 from .models import User, Booking, db
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, decode_token
 from sqlalchemy.exc import IntegrityError
@@ -17,10 +17,19 @@ from .models import Coupon
 from datetime import datetime
 from dotenv import load_dotenv
 load_dotenv()
+from .models import VoucherRegistration
+from .email_utils import send_email  # Ensure it supports attachments
+
+
 
 serializer = URLSafeTimedSerializer(os.environ.get("SECRET_KEY"))
 client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 auth = Blueprint('auth', __name__)
+
+
+@auth.route('/madri/register', methods=['GET'])
+def madri_register_page():
+    return render_template('madri_register.html')
 
 @auth.route('/register', methods=['POST'])
 def register():
@@ -259,26 +268,41 @@ def redeem_coupon():
         return jsonify({"error": "No coupon code found"}), 400
 
     code = scanned_text.strip()
-    coupon = Coupon.query.filter_by(code=code).first()
+    reg = VoucherRegistration.query.filter_by(voucher_id=code).first()
 
-    if coupon:
-        if coupon.redeemed:
-            return jsonify({"error": "This coupon has already been redeemed"}), 409
-        coupon.redeemed = True
-        coupon.redeemed_by = user_id
-        coupon.redeemed_at = datetime.utcnow()
-    else:
-        coupon = Coupon(
-            code=code,
-            raw_data=scanned_text,
-            redeemed=True,
-            redeemed_by=user_id,
-            redeemed_at=datetime.utcnow()
-        )
-        db.session.add(coupon)
+    if not reg:
+        return jsonify({"error": "Invalid or unregistered voucher code"}), 404
+    if reg.is_used:
+        return jsonify({"error": "This voucher has already been redeemed"}), 409
 
+    # Mark as used
+    reg.is_used = True
+    reg.used_at = datetime.utcnow()
+
+    # Duplicate into Coupon
+    coupon = Coupon(
+        code=code,
+        redeemed_by=user_id,
+        scanned_at=datetime.utcnow(),
+        first_name=reg.first_name,
+        middle_name=reg.middle_name,
+        last_name=reg.last_name,
+        email=reg.email,
+        phone=reg.phone,
+        dob=reg.dob,
+        house_number=reg.house_number,
+        street=reg.street,
+        city=reg.city,
+        county=reg.county,
+        postcode=reg.postcode,
+        country=reg.country,
+        raw_data=json.dumps(data)
+    )
+
+    db.session.add(coupon)
     db.session.commit()
-    return jsonify({"message": "Coupon redeemed successfully"}), 200
+
+    return jsonify({"message": "Voucher redeemed successfully"}), 200
 
 
 @auth.route('/chatbot', methods=['POST'])
@@ -356,3 +380,69 @@ def get_chat_logs():
         "flagged": log.flagged,
         "timestamp": log.timestamp.isoformat()
     } for log in logs]), 200
+
+
+
+@auth.route('/madri/register', methods=['POST'])
+def register_for_madri():
+    data = request.get_json()
+    required_fields = [
+        "first_name", "last_name", "email", "phone", "dob",
+        "house_number", "street", "city", "county", "postcode", "country", "consent_given"
+    ]
+
+    if not data or not all(field in data for field in required_fields):
+        return jsonify({"error": "Missing required fields"}), 400
+
+    if not data.get("consent_given"):
+        return jsonify({"error": "Consent is required"}), 400
+
+    # Check if already registered with this email or phone
+    existing = VoucherRegistration.query.filter(
+        (VoucherRegistration.email == data["email"]) |
+        (VoucherRegistration.phone == data["phone"])
+    ).first()
+    if existing:
+        return jsonify({"error": "You have already registered for this voucher"}), 409
+
+    # Save to DB
+    reg = VoucherRegistration(
+        first_name=data["first_name"],
+        middle_name=data.get("middle_name"),
+        last_name=data["last_name"],
+        email=data["email"],
+        phone=data["phone"],
+        dob=datetime.strptime(data["dob"], "%Y-%m-%d"),
+        house_number=data["house_number"],
+        street=data["street"],
+        city=data["city"],
+        county=data["county"],
+        postcode=data["postcode"],
+        country=data["country"],
+        consent_given=data["consent_given"]
+    )
+    db.session.add(reg)
+    db.session.commit()
+
+    # Generate QR code with only voucher_id
+    qr_img = qrcode.make(reg.voucher_id)
+    buf = io.BytesIO()
+    qr_img.save(buf, format='PNG')
+    buf.seek(0)
+
+    # Send QR code to user via email
+    subject = "Your Free Madri Pint Voucher 🍺"
+    content = f"""
+    Hi {reg.first_name},
+
+    Thank you for registering! Attached is your QR code voucher for a free Madri pint at Oasis Bar.
+
+    This voucher is for one-time use only. Show this QR at the bar to claim your drink.
+
+    Cheers,
+    Oasis Bar Team
+    """
+    if send_email(reg.email, subject, content, attachment=buf, filename="madri-voucher.png"):
+        return jsonify({"message": "Registration successful. QR voucher sent via email."}), 200
+    else:
+        return jsonify({"error": "Failed to send QR code email"}), 500
