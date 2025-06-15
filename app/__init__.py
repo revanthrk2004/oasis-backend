@@ -32,7 +32,7 @@ def create_app():
         user = models.User.query.get(int(identity))
         return {"role": user.role}
 
-    CORS(app)
+    CORS(app,resources={r"/*": {"origins": "*"}})
 
     try:
         from .routes import main

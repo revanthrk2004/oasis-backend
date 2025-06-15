@@ -27,9 +27,7 @@ client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 auth = Blueprint('auth', __name__)
 
 
-@auth.route('/madri/register', methods=['GET'])
-def madri_register_page():
-    return render_template('madri_register.html')
+
 
 @auth.route('/register', methods=['POST'])
 def register():
@@ -450,6 +448,4 @@ def register_for_madri():
 
 
 
-@auth.route('/test-template')
-def test_template():
-    return render_template('madri_register.html')
+
