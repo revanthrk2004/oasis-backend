@@ -448,4 +448,7 @@ def register_for_madri():
 
 
 
+@auth.route('/madri/register', methods=['GET'])
+def madri_register_info():
+    return jsonify({"message": "POST to this endpoint with registration data to claim your free Madri pint."})
 
