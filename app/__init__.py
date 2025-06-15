@@ -47,7 +47,7 @@ def create_app():
         from .happy_hour import happy_hour
 
         app.register_blueprint(main)
-        app.register_blueprint(auth)
+        app.register_blueprint(auth, url_prefix='')
         app.register_blueprint(menu)
         app.register_blueprint(orders)
         app.register_blueprint(bookings)

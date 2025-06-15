@@ -446,3 +446,10 @@ def register_for_madri():
         return jsonify({"message": "Registration successful. QR voucher sent via email."}), 200
     else:
         return jsonify({"error": "Failed to send QR code email"}), 500
+
+
+
+
+@auth.route('/test-template')
+def test_template():
+    return render_template('madri_register.html')
