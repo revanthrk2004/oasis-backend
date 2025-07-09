@@ -45,6 +45,7 @@ def create_app():
         from .admin import admin
         from .discounts import discounts
         from .happy_hour import happy_hour
+        from .routes.offers import offers_bp
 
         app.register_blueprint(main)
         app.register_blueprint(auth, url_prefix='')
@@ -56,6 +57,7 @@ def create_app():
         app.register_blueprint(admin)
         app.register_blueprint(discounts)
         app.register_blueprint(happy_hour)
+        app.register_blueprint(offers_bp)
 
 
 

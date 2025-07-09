@@ -186,3 +186,26 @@ class VoucherRegistration(db.Model):
     is_used = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     used_at = db.Column(db.DateTime, nullable=True)
+
+
+
+class Offer(db.Model):
+    __tablename__ = 'offers'
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(100), nullable=False)
+    subtitle = db.Column(db.String(100))
+    image_url = db.Column(db.String(300))
+    bullets = db.Column(db.Text, nullable=False)   # store JSON-encoded list of strings
+    sort_order = db.Column(db.Integer, default=0)
+    active = db.Column(db.Boolean, default=True)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "title": self.title,
+            "subtitle": self.subtitle,
+            "image_url": self.image_url,
+            "bullets": json.loads(self.bullets),
+            "sort_order": self.sort_order,
+            "active": self.active
+        }
