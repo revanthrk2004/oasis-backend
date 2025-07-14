@@ -3,6 +3,10 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 import uuid
 
+import json
+
+from sqlalchemy.dialects.postgresql import JSONB 
+
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
@@ -191,21 +195,21 @@ class VoucherRegistration(db.Model):
 
 class Offer(db.Model):
     __tablename__ = 'offers'
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(100), nullable=False)
-    subtitle = db.Column(db.String(100))
-    image_url = db.Column(db.String(300))
-    bullets = db.Column(db.Text, nullable=False)   # store JSON-encoded list of strings
+    id         = db.Column(db.Integer, primary_key=True)
+    title      = db.Column(db.String(100), nullable=False)
+    subtitle   = db.Column(db.String(100), nullable=True)
+    image_url  = db.Column(db.String(500), nullable=False)       # ← store Cloudinary URL
+    bullets    = db.Column(JSONB, nullable=False, default=list)  # ← real JSON column
     sort_order = db.Column(db.Integer, default=0)
-    active = db.Column(db.Boolean, default=True)
+    active     = db.Column(db.Boolean, default=True)
 
     def to_dict(self):
         return {
-            "id": self.id,
-            "title": self.title,
-            "subtitle": self.subtitle,
-            "image_url": self.image_url,
-            "bullets": json.loads(self.bullets),
+            "id":         self.id,
+            "title":      self.title,
+            "subtitle":   self.subtitle,
+            "image_url":  self.image_url,
+            "bullets":    self.bullets,
             "sort_order": self.sort_order,
-            "active": self.active
+            "active":     self.active,
         }
