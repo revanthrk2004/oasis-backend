@@ -317,17 +317,15 @@ def ai_chatbot():
 
     try:
         # 🔄 Fetch live content from Oasis website
-structured_info = {
-    "menu": scraper.fetch_menu(),
-    "events": scraper.fetch_events(),
-    "private_hire": scraper.fetch_private_hire(),
-    "about_us": scraper.fetch_about(),
-    "partners": scraper.fetch_partners(),
-    "faqs": scraper.fetch_faqs(),
-    "contact": scraper.fetch_contact_info()
-}
-
-        
+        structured_info = {
+                "menu": scraper.fetch_menu(),
+                "events": scraper.fetch_events(),
+                "private_hire": scraper.fetch_private_hire(),
+                "about_us": scraper.fetch_about(),
+                "partners": scraper.fetch_partners(),
+                "faqs": scraper.fetch_faqs(),
+                "contact": scraper.fetch_contact_info()
+        }
 
         # 💬 Create prompt for GPT
         prompt = (
