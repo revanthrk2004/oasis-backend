@@ -306,6 +306,8 @@ def redeem_coupon():
 @auth.route('/chatbot', methods=['POST'])
 @jwt_required(optional=True)
 def ai_chatbot():
+    from . import scraper  # ✅ Import the live data scraper module
+
     data = request.get_json()
     user_message = data.get("message")
     user_id = get_jwt_identity()
@@ -314,38 +316,43 @@ def ai_chatbot():
         return jsonify({"error": "Message is required"}), 400
 
     try:
-        # ✅ Load structured data
-        file_path = os.path.join(os.path.dirname(__file__), "oasis_info.json")
-        with open(file_path, "r") as file:
-            oasis_info = json.load(file)
+        # 🔄 Fetch live content from Oasis website
+        structured_info = {
+            "menu": scraper.fetch_menu(),
+            "events": scraper.fetch_offers(),
+            "contact": scraper.fetch_contact_info(),
+            "faqs": scraper.fetch_faqs(),
+        }
 
+        # 💬 Create prompt for GPT
         prompt = (
-            "You are an AI assistant for Oasis Bar & Terrace in Canary Wharf, London. "
-            "Use only the following data to answer questions accurately and clearly:\n\n"
-            f"{json.dumps(oasis_info, indent=2)}\n\n"
-            f"User message: {user_message}\n"
-            "Only answer based on the above data. Do not make up information."
+            "You are an AI assistant for Oasis Bar & Terrace in Canary Wharf, London.\n"
+            "Use ONLY the structured data below to answer clearly and accurately.\n"
+            "If a question cannot be answered using this data, say 'I’m not sure'.\n\n"
+            f"{json.dumps(structured_info, indent=2)}\n\n"
+            f"User message: {user_message}"
         )
 
+        # 🔥 Call GPT
         response = client.chat.completions.create(
             model="gpt-4",
             messages=[
-                {"role": "system", "content": "You are an accurate and helpful assistant using structured info only."},
+                {"role": "system", "content": "You are a helpful AI using structured website data only."},
                 {"role": "user", "content": prompt}
             ],
-            max_tokens=300,
+            max_tokens=500,
             temperature=0.5,
         )
 
         reply = response.choices[0].message.content
 
-        # ✅ Log to DB
-        from .models import ChatLog  # make sure you import this
+        # 🗃️ Log in DB
+        from .models import ChatLog
         log = ChatLog(
             user_id=user_id if user_id else None,
             question=user_message,
             answer=reply,
-            flagged="I don't know" in reply
+            flagged="I’m not sure" in reply
         )
         db.session.add(log)
         db.session.commit()
@@ -353,7 +360,7 @@ def ai_chatbot():
         return jsonify({"reply": reply})
 
     except Exception as e:
-        print("AI error:", e)
+        print("Chatbot error:", e)
         return jsonify({"error": "AI service failed"}), 500
 
 
