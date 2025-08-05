@@ -27,6 +27,10 @@ client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 auth = Blueprint('auth', __name__)
 
 
+import textwrap
+
+def truncate(text, limit=1000):
+    return textwrap.shorten(text, width=limit, placeholder="...")
 
 
 @auth.route('/register', methods=['POST'])
@@ -318,13 +322,14 @@ def ai_chatbot():
     try:
         # 🔄 Fetch live content from Oasis website
         structured_info = {
-                "menu": scraper.fetch_menu(),
-                "events": scraper.fetch_events(),
-                "private_hire": scraper.fetch_private_hire(),
-                "about_us": scraper.fetch_about(),
-                "partners": scraper.fetch_partners(),
-                "faqs": scraper.fetch_faqs(),
-                "contact": scraper.fetch_contact_info()
+            "menu": truncate(scraper.fetch_menu()),
+            "events": truncate(scraper.fetch_events()),
+            "private_hire": truncate(scraper.fetch_private_hire()),
+            "about_us": truncate(scraper.fetch_about()),
+            "partners": truncate(scraper.fetch_partners()),
+            "faqs": truncate(scraper.fetch_faqs()),
+            "contact": truncate(scraper.fetch_contact_info())
+
         }
 
         # 💬 Create prompt for GPT
